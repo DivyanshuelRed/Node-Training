@@ -1,28 +1,38 @@
 const path = require('path');
+
 const express = require('express');
 const bodyParser = require('body-parser');
-const app = express();
-const adminRoutes = require('./routes/admin');
-const shopRoutes = require('./routes/shop');
-const expressHbs = require("express-handlebars");
-const errorController = require("./controllers/error");
-//app.engine('hbs',expressHbs({layoutsDir: 'views/layouts/',defaultLayout:"main-layout"}));
-const mongoConnect = require("./util/database").mongoConnect;
+const mongoose = require('mongoose');
+
+const errorController = require('./controllers/error');
 const User = require('./models/user');
+
+const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
-app.use(bodyParser.urlencoded({extended: false}));
+const adminRoutes = require('./routes/admin');
+const shopRoutes = require('./routes/shop');
+
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 
-app.use((req, res, next) => {
-    User.findById('651e9a68de513f1c86c3c902').then(user => { req.user = new User(user.name, user.email, user.cart, user._id); next();
-      }).catch(err => console.log(err));
-  });
+app.use((req, res, next) => { User.findById('651efde7d70e79d75b32aced').then(user => { req.user = user; next()}).catch(err => console.log(err))});
 
 app.use(errorController.get404);
 
-mongoConnect(() => app.listen(3000))
+mongoose.connect('mongodb+srv://alonesoul2307:YjrGh1IPTIrQ3MUr@cluster0.qiujtss.mongodb.net/?retryWrites=true&w=majority').then(result => {
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({ name: 'Divyanshu',
+          email: 'DivyanshuGoyal@gmail.com',
+          cart: {items: []}
+        });
+        user.save();
+      }});
+    app.listen(3000);
+  })
+  .catch(e => { console.log(e) });
